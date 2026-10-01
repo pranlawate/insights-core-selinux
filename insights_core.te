@@ -18,6 +18,15 @@ files_type(insights_core_cache_t)
 type insights_core_tmp_t;
 files_tmp_file(insights_core_tmp_t)
 
+# RHEL-185505: CrowdStrike falconctl partial confinement
+type crowdstrike_t;
+role system_r types crowdstrike_t;
+domain_type(crowdstrike_t)
+unconfined_domain(crowdstrike_t)
+
+type crowdstrike_exec_t;
+files_type(crowdstrike_exec_t)
+
 ########################################
 #
 # insights_core local policy
@@ -377,6 +386,13 @@ optional_policy(`
 optional_policy(`
     sap_unconfined_domtrans(insights_core_t)
 ')
+
+# RHEL-185505: transition insights_core_t to unconfined crowdstrike_t when
+# executing falconctl, so CrowdStrike can write its data files without
+# broadening insights_core_t permissions.
+domtrans_pattern(insights_core_t, crowdstrike_exec_t, crowdstrike_t)
+allow crowdstrike_t crowdstrike_exec_t:file entrypoint;
+allow insights_core_t crowdstrike_exec_t:file map;
 
 optional_policy(`
     setroubleshoot_dbus_chat(insights_core_t)
